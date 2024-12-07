@@ -3,121 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des feuilles</title>
+    <title>Tableau Interactif</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid black;
         }
         th, td {
-            padding: 10px;
+            border: 1px solid #000;
+            padding: 8px;
             text-align: center;
         }
         th {
             background-color: #f4f4f4;
         }
-        form {
-            margin-bottom: 20px;
-        }
-        form div {
-            margin-bottom: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
+        .hidden {
+            display: none;
         }
     </style>
-</head>
-<body>
-    <h1>Gestion des feuilles hebdomadaires</h1>
-    <form id="dataForm">
-        <div>
-            <label for="date">Date :</label>
-            <input type="date" id="date" required>
-        </div>
-        <div>
-            <label for="client">Client :</label>
-            <input type="text" id="client" required>
-        </div>
-        <div>
-            <label for="lieu">Adresse/Chantier :</label>
-            <input type="text" id="lieu" required>
-        </div>
-        <div>
-            <label for="heures">Heures effectuées :</label>
-            <input type="number" id="heures" min="1" max="24" required>
-        </div>
-        <div>
-            <label for="matin">Passage matin ou après-midi :</label>
-            <select id="matin" required>
-                <option value="Matin">Matin</option>
-                <option value="Après-midi">Après-midi</option>
-            </select>
-        </div>
-        <button type="button" onclick="addRow()">Ajouter</button>
-    </form>
-    <table id="dataTable">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Client</th>
-                <th>Adresse/Chantier</th>
-                <th>Heures effectuées</th>
-                <th>Matin/Après-midi</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-    <button onclick="exportToPDF()">Exporter en PDF</button>
-
     <script>
-        function addRow() {
-            const date = document.getElementById("date").value;
-            const client = document.getElementById("client").value;
-            const lieu = document.getElementById("lieu").value;
-            const heures = document.getElementById("heures").value;
-            const matin = document.getElementById("matin").value;
+        // Fonction pour générer les dates du lundi au samedi dans la plage donnée
+        function generateDates() {
+            const du = document.querySelector('input[name="date_du"]').value;
+            const au = document.querySelector('input[name="date_au"]').value;
 
-            if (date && client && lieu && heures && matin) {
-                const table = document.getElementById("dataTable").querySelector("tbody");
-                const row = table.insertRow();
-                row.innerHTML = `
-                    <td>${date}</td>
-                    <td>${client}</td>
-                    <td>${lieu}</td>
-                    <td>${heures}h</td>
-                    <td>${matin}</td>
-                `;
-                document.getElementById("dataForm").reset();
-            } else {
-                alert("Veuillez remplir tous les champs !");
+            if (du && au) {
+                const startDate = new Date(du);
+                const endDate = new Date(au);
+                const tbody = document.querySelector('#jours-semaine');
+                tbody.innerHTML = ''; // Vider le tableau avant de remplir les nouvelles lignes
+
+                let currentDate = new Date(startDate);
+                let index = 0;
+
+                while (currentDate <= endDate) {
+                    const dayOfWeek = currentDate.getDay(); // Obtient le jour de la semaine (0=dimanche, 1=lundi, ...)
+                    
+                    // Si ce n'est pas un dimanche, on ajoute la ligne pour le jour
+                    if (dayOfWeek !== 0) {
+                        let row = document.createElement('tr');
+                        let dayName = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][dayOfWeek];
+                        let dateStr = currentDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
+
+                        row.innerHTML = `
+                            <td><input type="date" name="date_${dayName.toLowerCase()}" value="${dateStr}" readonly /></td>
+                            <td>${dayName}</td>
+                            <td><input type="text" name="adresse_${dayName.toLowerCase()}" /></td>
+                            <td><input type="text" name="client_${dayName.toLowerCase()}" /></td>
+                            <td><input type="checkbox" name="z1_${dayName.toLowerCase()}" /></td>
+                            <td><input type="checkbox" name="z2_${dayName.toLowerCase()}" /></td>
+                            <td><input type="checkbox" name="z3_${dayName.toLowerCase()}" /></td>
+                            <td><input type="checkbox" name="z4_${dayName.toLowerCase()}" /></td>
+                            <td><input type="checkbox" name="z5_${dayName.toLowerCase()}" /></td>
+                            <td><input type="number" name="heures_${dayName.toLowerCase()}" /></td>
+                            <td><input type="number" name="supp_${dayName.toLowerCase()}" /></td>
+                            <td>
+                                <select name="depot_${dayName.toLowerCase()}" onchange="clearMatinApresMidiAndJustificatifs(this)">
+                                    <option value="Oui">Oui</option>
+                                    <option value="Non">Non</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="matin_apresmidi_${dayName.toLowerCase()}">
+                                    <option value="Matin">Matin</option>
+                                    <option value="Après-midi">Après-midi</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="justificatifs_${dayName.toLowerCase()}" onchange="toggleJustificatif(this)">
+                                    <option value="Binome">Binôme</option>
+                                    <option value="Autre">Autre</option>
+                                </select>
+                                <input type="text" class="hidden justificatif-autre" placeholder="Spécifiez" />
+                            </td>
+                            <td><input type="text" name="signature_${dayName.toLowerCase()}" /></td>
+                        `;
+                        tbody.appendChild(row);
+                    }
+
+                    currentDate.setDate(currentDate.getDate() + 1); // Passer au jour suivant
+                }
             }
         }
 
-        function exportToPDF() {
-            const table = document.getElementById("dataTable");
-            const tableHTML = table.outerHTML.replace(/ /g, "%20");
+        // Afficher le champ texte si "Autre" est sélectionné dans "Justificatifs"
+        function toggleJustificatif(input) {
+            const otherField = input.parentElement.querySelector('.justificatif-autre');
+            if (input.value === 'Autre') {
+                otherField.classList.remove('hidden');
+            } else {
+                otherField.classList.add('hidden');
+                otherField.value = "";
+            }
+        }
 
-            const link = document.createElement("a");
-            link.href = `data:application/vnd.ms-excel,${tableHTML}`;
-            link.download = "Feuille_Hebdomadaire.xls";
-            link.click();
+        // Fonction pour vider les champs "Matin ou Après-midi" et "Justificatifs" si "Non" est sélectionné dans "Passage Dépôt"
+        function clearMatinApresMidiAndJustificatifs(select) {
+            const row = select.closest('tr');
+            const matinApresMidi = row.querySelector('select[name*="matin_apresmidi"]');
+            const justificatifs = row.querySelector('select[name*="justificatifs"]');
+            
+            if (select.value === 'Non') {
+                matinApresMidi.value = ''; // Vider le champ "Matin ou Après-midi"
+                justificatifs.value = ''; // Vider le champ "Justificatifs"
+                const justificatifsAutre = row.querySelector('.justificatif-autre');
+                justificatifsAutre.classList.add('hidden');
+                justificatifsAutre.value = ''; // Vider l'input "Autre"
+            }
         }
     </script>
+</head>
+<body>
+    <br>
+    <form>
+        <table>
+            <thead>
+                <tr>
+                    <th>Entreprise</th>
+                    <th>Nom et Prénom</th>
+                    <th>Semaine</th>
+                    <th>Du</th>
+                    <th>Au</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="text" name="entreprise" /></td>
+                    <td><input type="text" name="nom_prenom" /></td>
+                    <td><input type="text" name="semaine" /></td>
+                    <td><input type="date" name="date_du" onchange="generateDates()" /></td>
+                    <td><input type="date" name="date_au" onchange="generateDates()" /></td>
+                </tr>
+            </tbody>
+        </table>
+        <br>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Jour</th>
+                    <th>Adresse(s) Chantier(s)</th>
+                    <th>Client</th>
+                    <th>Z1</th>
+                    <th>Z2</th>
+                    <th>Z3</th>
+                    <th>Z4</th>
+                    <th>Z5</th>
+                    <th>Heures Effectuées</th>
+                    <th>Heures Supp.</th>
+                    <th>Passage Dépôt</th>
+                    <th>Matin ou Après-midi</th>
+                    <th>Justificatifs</th>
+                    <th>Signature CTX</th>
+                </tr>
+            </thead>
+            <tbody id="jours-semaine">
+                <!-- Les lignes seront ajoutées dynamiquement ici -->
+            </tbody>
+        </table>
+        <br>
+    </form>
+
+<!-- Signature du salarié -->
+<div class="signature-container">
+    <label for="signature-canvas">Signature du salarié :</label>
+    <canvas id="signature-canvas" width="300" height="100"></canvas>
+    <button type="button" onclick="clearSignature()" class="clear-btn">Effacer</button>
+</div>
+
+<script>
+    // Fonction pour réinitialiser le canevas de signature
+    function clearSignature() {
+        const canvas = document.getElementById('signature-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Fonction pour dessiner la signature
+    function startSignature(event) {
+        const canvas = document.getElementById('signature-canvas');
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        if (event.buttons === 1) { // Si le bouton de la souris est enfoncé
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'black';
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+    }
+
+    // Ajouter des événements pour commencer et dessiner sur le canevas
+    window.onload = function() {
+        const canvas = document.getElementById('signature-canvas');
+        canvas.addEventListener('mousedown', (event) => {
+            canvas.addEventListener('mousemove', startSignature);
+        });
+        canvas.addEventListener('mouseup', () => {
+            canvas.removeEventListener('mousemove', startSignature);
+        });
+        canvas.addEventListener('mouseleave', () => {
+            canvas.removeEventListener('mousemove', startSignature);
+        });
+    }
+</script>
+
+<style>
+    .signature-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        text-align: left;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .signature-container label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    #signature-canvas {
+        border: 1px solid #000;
+        width: 300px;
+        height: 100px;
+        margin-bottom: 10px;
+    }
+
+    .clear-btn {
+        display: block;
+        margin-top: 10px;
+        background-color: #f44336;
+        color: white;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .clear-btn:hover {
+        background-color: #d32f2f;
+    }
+</style>
 </body>
 </html>
 
