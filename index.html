@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau Interactif</title>
+    <title>Feuille de Semaine</title>
     <style>
         table {
             width: 100%;
@@ -264,7 +264,7 @@
             <tbody>
                 <tr>
                     <td><input type="text" name="entreprise" /></td>
-                    <td><input type="text" name="nom_prenom" /></td>
+                    <td><input type="text" name="nom_prenom" id="nom_prenom" /></td>
                     <td><input type="text" name="semaine" /></td>
                     <td><input type="date" name="date_du" onchange="generateDates()" /></td>
                     <td><input type="date" name="date_au" onchange="generateDates()" /></td>
@@ -302,6 +302,28 @@
         <canvas id="signature-canvas" width="300" height="100"></canvas>
         <button type="button" onclick="clearSignature()" class="clear-btn">Effacer la signature</button>
     </div>
+    <button id="screenshot-btn" style="position: fixed; bottom: 10px; left: 10px; z-index: 1000;">
+        📸 ScreenShot
+    </button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        const screenshotBtn = document.getElementById('screenshot-btn');
+        screenshotBtn.addEventListener('click', () => {
+            screenshotBtn.style.display = 'none'; // Скрываем кнопку перед скриншотом
+            const nomPrenom = document.getElementById('nom_prenom').value.trim(); // Получаем значение поля "Nom et Prénom"
+            const currentDate = new Date();
+            const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
+            const filename = `${nomPrenom}_${formattedDate}.png`;
+
+            html2canvas(document.body, { scrollY: -window.scrollY }).then((canvas) => {
+                screenshotBtn.style.display = ''; // Возвращаем кнопку после скриншота
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        });
+    </script>
 </body>
 </html>
-
