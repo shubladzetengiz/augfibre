@@ -9,20 +9,114 @@
             width: 100%;
             border-collapse: collapse;
         }
+
         th, td {
             border: 1px solid #000;
             padding: 8px;
             text-align: center;
         }
+
         th {
             background-color: #f4f4f4;
         }
+
         .hidden {
             display: none;
         }
+
+        .signature-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            text-align: left;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .signature-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        #signature-canvas {
+            border: 1px solid #000;
+            width: 300px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        .clear-btn {
+            display: block;
+            margin-top: 10px;
+            background-color: #f44336;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .clear-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        input, button {
+            font-size: 16px;
+            padding: 8px 12px;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 4px;
+            }
+
+            .signature-container {
+                width: calc(100% - 40px);
+                right: 10px;
+            }
+
+            #signature-canvas {
+                width: 100%;
+                height: auto;
+            }
+        }
+
+        @media (max-width: 600px) {
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+
+            tr {
+                margin-bottom: 10px;
+            }
+
+            th {
+                display: none;
+            }
+
+            td {
+                position: relative;
+                padding-left: 50%;
+            }
+
+            td:before {
+                content: attr(data-label);
+                position: absolute;
+                left: 10px;
+                top: 0;
+                white-space: nowrap;
+                font-weight: bold;
+            }
+        }
     </style>
     <script>
-        // Fonction pour générer les dates du lundi au samedi dans la plage donnée
         function generateDates() {
             const du = document.querySelector('input[name="date_du"]').value;
             const au = document.querySelector('input[name="date_au"]').value;
@@ -31,62 +125,58 @@
                 const startDate = new Date(du);
                 const endDate = new Date(au);
                 const tbody = document.querySelector('#jours-semaine');
-                tbody.innerHTML = ''; // Vider le tableau avant de remplir les nouvelles lignes
+                tbody.innerHTML = '';
 
                 let currentDate = new Date(startDate);
-                let index = 0;
 
                 while (currentDate <= endDate) {
-                    const dayOfWeek = currentDate.getDay(); // Obtient le jour de la semaine (0=dimanche, 1=lundi, ...)
-                    
-                    // Si ce n'est pas un dimanche, on ajoute la ligne pour le jour
+                    const dayOfWeek = currentDate.getDay();
                     if (dayOfWeek !== 0) {
                         let row = document.createElement('tr');
                         let dayName = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][dayOfWeek];
-                        let dateStr = currentDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
+                        let dateStr = currentDate.toISOString().split('T')[0];
 
                         row.innerHTML = `
-                            <td><input type="date" name="date_${dayName.toLowerCase()}" value="${dateStr}" readonly /></td>
-                            <td>${dayName}</td>
-                            <td><input type="text" name="adresse_${dayName.toLowerCase()}" /></td>
-                            <td><input type="text" name="client_${dayName.toLowerCase()}" /></td>
-                            <td><input type="checkbox" name="z1_${dayName.toLowerCase()}" /></td>
-                            <td><input type="checkbox" name="z2_${dayName.toLowerCase()}" /></td>
-                            <td><input type="checkbox" name="z3_${dayName.toLowerCase()}" /></td>
-                            <td><input type="checkbox" name="z4_${dayName.toLowerCase()}" /></td>
-                            <td><input type="checkbox" name="z5_${dayName.toLowerCase()}" /></td>
-                            <td><input type="number" name="heures_${dayName.toLowerCase()}" /></td>
-                            <td><input type="number" name="supp_${dayName.toLowerCase()}" /></td>
-                            <td>
+                            <td data-label="Date"><input type="date" name="date_${dayName.toLowerCase()}" value="${dateStr}" readonly /></td>
+                            <td data-label="Jour">${dayName}</td>
+                            <td data-label="Adresse(s) Chantier(s)"><input type="text" name="adresse_${dayName.toLowerCase()}" /></td>
+                            <td data-label="Client"><input type="text" name="client_${dayName.toLowerCase()}" /></td>
+                            <td data-label="Z1"><input type="checkbox" name="z1_${dayName.toLowerCase()}" /></td>
+                            <td data-label="Z2"><input type="checkbox" name="z2_${dayName.toLowerCase()}" /></td>
+                            <td data-label="Z3"><input type="checkbox" name="z3_${dayName.toLowerCase()}" /></td>
+                            <td data-label="Z4"><input type="checkbox" name="z4_${dayName.toLowerCase()}" /></td>
+                            <td data-label="Z5"><input type="checkbox" name="z5_${dayName.toLowerCase()}" /></td>
+                            <td data-label="Heures Effectuées"><input type="number" name="heures_${dayName.toLowerCase()}" /></td>
+                            <td data-label="Heures Supp."><input type="number" name="supp_${dayName.toLowerCase()}" /></td>
+                            <td data-label="Passage Dépôt">
                                 <select name="depot_${dayName.toLowerCase()}" onchange="clearMatinApresMidiAndJustificatifs(this)">
                                     <option value="Oui">Oui</option>
                                     <option value="Non">Non</option>
                                 </select>
                             </td>
-                            <td>
+                            <td data-label="Matin ou Après-midi">
                                 <select name="matin_apresmidi_${dayName.toLowerCase()}">
                                     <option value="Matin">Matin</option>
                                     <option value="Après-midi">Après-midi</option>
                                 </select>
                             </td>
-                            <td>
+                            <td data-label="Justificatifs">
                                 <select name="justificatifs_${dayName.toLowerCase()}" onchange="toggleJustificatif(this)">
                                     <option value="Binome">Binôme</option>
                                     <option value="Autre">Autre</option>
                                 </select>
                                 <input type="text" class="hidden justificatif-autre" placeholder="Spécifiez" />
                             </td>
-                            <td><input type="text" name="signature_${dayName.toLowerCase()}" /></td>
+                            <td data-label="Signature CTX"><input type="text" name="signature_${dayName.toLowerCase()}" /></td>
                         `;
                         tbody.appendChild(row);
                     }
 
-                    currentDate.setDate(currentDate.getDate() + 1); // Passer au jour suivant
+                    currentDate.setDate(currentDate.getDate() + 1);
                 }
             }
         }
 
-        // Afficher le champ texte si "Autre" est sélectionné dans "Justificatifs"
         function toggleJustificatif(input) {
             const otherField = input.parentElement.querySelector('.justificatif-autre');
             if (input.value === 'Autre') {
@@ -97,19 +187,64 @@
             }
         }
 
-        // Fonction pour vider les champs "Matin ou Après-midi" et "Justificatifs" si "Non" est sélectionné dans "Passage Dépôt"
         function clearMatinApresMidiAndJustificatifs(select) {
             const row = select.closest('tr');
             const matinApresMidi = row.querySelector('select[name*="matin_apresmidi"]');
             const justificatifs = row.querySelector('select[name*="justificatifs"]');
             
             if (select.value === 'Non') {
-                matinApresMidi.value = ''; // Vider le champ "Matin ou Après-midi"
-                justificatifs.value = ''; // Vider le champ "Justificatifs"
+                matinApresMidi.value = '';
+                justificatifs.value = '';
                 const justificatifsAutre = row.querySelector('.justificatif-autre');
                 justificatifsAutre.classList.add('hidden');
-                justificatifsAutre.value = ''; // Vider l'input "Autre"
+                justificatifsAutre.value = '';
             }
+        }
+
+        function clearSignature() {
+            const canvas = document.getElementById('signature-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function startSignature(event) {
+            const canvas = document.getElementById('signature-canvas');
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            const x = (event.clientX || event.touches[0].clientX) - rect.left;
+            const y = (event.clientY || event.touches[0].clientY) - rect.top;
+
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'black';
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+
+        window.onload = function() {
+            const canvas = document.getElementById('signature-canvas');
+            canvas.addEventListener('mousedown', (event) => {
+                canvas.addEventListener('mousemove', startSignature);
+            });
+            canvas.addEventListener('mouseup', () => {
+                canvas.removeEventListener('mousemove', startSignature);
+            });
+            canvas.addEventListener('mouseleave', () => {
+                canvas.removeEventListener('mousemove', startSignature);
+            });
+
+            canvas.addEventListener('touchstart', (event) => {
+                event.preventDefault();
+                startSignature(event);
+            });
+            canvas.addEventListener('touchmove', (event) => {
+                event.preventDefault();
+                startSignature(event);
+            });
+            canvas.addEventListener('touchend', () => {
+                const ctx = canvas.getContext('2d');
+                ctx.beginPath();
+            });
         }
     </script>
 </head>
@@ -158,99 +293,15 @@
                 </tr>
             </thead>
             <tbody id="jours-semaine">
-                <!-- Les lignes seront ajoutées dynamiquement ici -->
             </tbody>
         </table>
-        <br>
     </form>
 
-<!-- Signature du salarié -->
-<div class="signature-container">
-    <label for="signature-canvas">Signature du salarié :</label>
-    <canvas id="signature-canvas" width="300" height="100"></canvas>
-    <button type="button" onclick="clearSignature()" class="clear-btn">Effacer</button>
-</div>
-
-<script>
-    // Fonction pour réinitialiser le canevas de signature
-    function clearSignature() {
-        const canvas = document.getElementById('signature-canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // Fonction pour dessiner la signature
-    function startSignature(event) {
-        const canvas = document.getElementById('signature-canvas');
-        const ctx = canvas.getContext('2d');
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        if (event.buttons === 1) { // Si le bouton de la souris est enfoncé
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = 'black';
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        }
-    }
-
-    // Ajouter des événements pour commencer et dessiner sur le canevas
-    window.onload = function() {
-        const canvas = document.getElementById('signature-canvas');
-        canvas.addEventListener('mousedown', (event) => {
-            canvas.addEventListener('mousemove', startSignature);
-        });
-        canvas.addEventListener('mouseup', () => {
-            canvas.removeEventListener('mousemove', startSignature);
-        });
-        canvas.addEventListener('mouseleave', () => {
-            canvas.removeEventListener('mousemove', startSignature);
-        });
-    }
-</script>
-
-<style>
-    .signature-container {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        text-align: left;
-        padding: 10px;
-        background-color: #f9f9f9;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-
-    .signature-container label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-    }
-
-    #signature-canvas {
-        border: 1px solid #000;
-        width: 300px;
-        height: 100px;
-        margin-bottom: 10px;
-    }
-
-    .clear-btn {
-        display: block;
-        margin-top: 10px;
-        background-color: #f44336;
-        color: white;
-        padding: 5px 10px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-    .clear-btn:hover {
-        background-color: #d32f2f;
-    }
-</style>
+    <div class="signature-container"> 
+        <label for="signature-canvas">Signature du salarié :</label>
+        <canvas id="signature-canvas" width="300" height="100"></canvas>
+        <button type="button" onclick="clearSignature()" class="clear-btn">Effacer la signature</button>
+    </div>
 </body>
 </html>
 
